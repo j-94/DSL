@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
-"""Demo of Donkey-DSL system without running server"""
+"""Demo of Donkey-DSL system with LLM integration"""
 
 from donkey_dsl import DonkeyDSL
+from llm_donkey_integration import (
+    PromptInjector,
+    LLMBehaviorAnalyzer,
+    DSLConversation,
+    DSLCalibrator
+)
 import json
 
 def demo():
@@ -79,6 +85,102 @@ def demo():
                 print(f"  Average u: {avg_params['u']:.2f}")
                 print(f"  Average test: {avg_params['test']:.2f}")
                 print(f"  Average mem: {avg_params['mem']:.2f}")
+    
+    # LLM Integration Demo
+    print("\n\n=== LLM INTEGRATION DEMO ===")
+    
+    # Create integration components
+    injector = PromptInjector()
+    analyzer = LLMBehaviorAnalyzer()
+    
+    # Demonstrate prompt injection
+    print("\n--- Prompt Injection Examples ---")
+    
+    test_prompts = [
+        ("fix critical bug in payment system", {"u": 0.2, "test_prob": 1.0, "mem_thresh": 0.9}),
+        ("explore novel database architectures", {"u": 4.0, "test_prob": 0.2, "mem_thresh": 0.3}),
+        ("refactor user authentication", {"u": 1.0, "test_prob": 0.5, "mem_thresh": 0.5})
+    ]
+    
+    for base_prompt, dsl_params in test_prompts:
+        print(f"\nBase prompt: {base_prompt}")
+        print(f"DSL params: u={dsl_params['u']}, test_prob={dsl_params['test_prob']:.0%}")
+        injected = injector.inject_dsl_behavior(base_prompt, dsl_params)
+        print("Injected prompt:")
+        print(injected[:200] + "...")
+    
+    # Demonstrate behavior analysis
+    print("\n\n--- Behavior Analysis ---")
+    
+    sample_responses = [
+        ("Let me explore several unconventional approaches:\n"
+         "Approach 1: We could use a novel graph-based algorithm...\n"
+         "Approach 2: An experimental neural architecture might work...\n"
+         "def test_solution():\n    assert validate_output() == True",
+         {"u": 3.0, "test_prob": 0.8, "mem_thresh": 0.5}),
+        
+        ("I'll use the standard, proven approach for this:\n"
+         "The conventional solution involves using established patterns.\n"
+         "This traditional method has been tested extensively.",
+         {"u": 0.3, "test_prob": 0.5, "mem_thresh": 0.8})
+    ]
+    
+    for response, recommended_dsl in sample_responses:
+        behavior = analyzer.measure_actual_dsl(response, recommended_dsl)
+        print(f"\nResponse preview: {response[:80]}...")
+        print(f"Recommended u: {recommended_dsl['u']:.1f}")
+        print(f"Actual u measured: {behavior.actual_u:.1f}")
+        print(f"Test detected: {behavior.actual_test}")
+        print(f"Compliance score: {behavior.followed_recommendation:.0%}")
+        print(f"Unique approaches: {behavior.unique_approaches}")
+    
+    # Demonstrate calibration
+    print("\n\n--- DSL Calibration ---")
+    calibrator = DSLCalibrator()
+    
+    # Mock LLM client for demo
+    class MockLLM:
+        def complete(self, prompt):
+            from collections import namedtuple
+            Response = namedtuple('Response', ['content'])
+            return Response(content="Mock response based on prompt")
+    
+    print("Calibrating DSL effects (simulated)...")
+    transfer_functions = calibrator.calibrate_dsl_effects(
+        MockLLM(), 
+        ["solve a simple problem", "implement a feature", "debug an issue"]
+    )
+    
+    print("\nTransfer functions (requested → actual):")
+    for requested, actual in transfer_functions.items():
+        print(f"  u{requested} → {actual:.1f}")
+    
+    # Demonstrate conversation
+    print("\n\n--- DSL-Guided Conversation ---")
+    
+    conv = DSLConversation("build a recommendation engine", donkey)
+    print(f"Task: {conv.task}")
+    print(f"Initial DSL: {conv.dsl['dsl']}")
+    
+    # Simulate conversation turns
+    turns = [
+        "What algorithms should we consider?",
+        "Let's explore more creative approaches",
+        "Actually, we need something production-ready"
+    ]
+    
+    for i, user_input in enumerate(turns):
+        print(f"\nTurn {i+1}: {user_input}")
+        response, behavior = conv.turn(user_input, MockLLM())
+        print(f"Current DSL: {conv.dsl['dsl']}")
+        print(f"Behavior compliance: {behavior.followed_recommendation:.0%}")
+    
+    # Get trajectory
+    trajectory = conv.get_trajectory()
+    print(f"\nConversation trajectory:")
+    print(f"  Success estimate: {trajectory['success']:.0%}")
+    print(f"  Average compliance: {trajectory['avg_compliance']:.0%}")
+    print(f"  Total turns: {trajectory['turns']}")
 
 if __name__ == "__main__":
     demo()

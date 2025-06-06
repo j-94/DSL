@@ -13,6 +13,12 @@ import numpy as np
 from flask import Flask, request, jsonify
 from collections import defaultdict
 import re
+from llm_donkey_integration import (
+    PromptInjector, 
+    LLMBehaviorAnalyzer, 
+    DSLConversation,
+    BehaviorMeasurement
+)
 
 @dataclass
 class DSLParams:
@@ -39,6 +45,10 @@ class DonkeyDSL:
         self.task_embeddings: Dict[str, Dict] = {}
         self.dsl_stats: Dict[str, Dict] = defaultdict(lambda: {"success": 0, "total": 0})
         self.app = Flask(__name__)
+        # LLM integration components
+        self.prompt_injector = PromptInjector()
+        self.behavior_analyzer = LLMBehaviorAnalyzer()
+        self.active_conversations = {}  # Store ongoing conversations
         self.setup_routes()
         self.load_trajectories()
         
@@ -346,6 +356,185 @@ class DonkeyDSL:
         @self.app.route('/health', methods=['GET'])
         def health():
             return jsonify({"status": "healthy", "trajectories": len(self.trajectories)})
+        
+        @self.app.route('/llm/execute', methods=['POST'])
+        def llm_execute():
+            """Execute task with LLM using DSL behavior modification"""
+            data = request.json
+            task = data.get('task', '')
+            prompt = data.get('prompt', task)
+            context = data.get('context', {})
+            use_donkey = data.get('use_donkey', True)
+            
+            if not task:
+                return jsonify({"error": "Task is required"}), 400
+            
+            if use_donkey:
+                # Get DSL recommendation
+                dsl, confidence, based_on = self.donkey(task, context)
+                params = self.parse_dsl(dsl)
+                params_dict = {
+                    'u': params.u,
+                    'test_prob': params.test,
+                    'mem_thresh': params.mem,
+                    'sim': params.sim,
+                    'mutate': params.mutate
+                }
+                
+                # Inject DSL behavior
+                modified_prompt = self.prompt_injector.inject_dsl_behavior(prompt, params_dict)
+                
+                # Simulate LLM response (in production, call actual LLM)
+                response = self._simulate_llm_response(modified_prompt, params.u)
+                
+                # Measure behavior
+                behavior = self.behavior_analyzer.measure_actual_dsl(response, params_dict)
+                
+                # Record trajectory
+                success = behavior.followed_recommendation > 0.7
+                self.record_trajectory(task, dsl, success, 1000)
+                
+                return jsonify({
+                    "response": response,
+                    "dsl": {
+                        "recommended": dsl,
+                        "confidence": confidence,
+                        "params": params_dict
+                    },
+                    "behavior": {
+                        "actual_u": behavior.actual_u,
+                        "actual_test": behavior.actual_test,
+                        "compliance": behavior.followed_recommendation,
+                        "unique_approaches": behavior.unique_approaches
+                    }
+                })
+            else:
+                # Direct execution without DSL
+                response = self._simulate_llm_response(prompt, 1.0)
+                return jsonify({
+                    "response": response,
+                    "dsl": None
+                })
+        
+        @self.app.route('/llm/conversation/start', methods=['POST'])
+        def start_conversation():
+            """Start a new DSL-guided conversation"""
+            data = request.json
+            task = data.get('task', '')
+            conversation_id = data.get('conversation_id', None)
+            
+            if not task:
+                return jsonify({"error": "Task is required"}), 400
+            
+            if not conversation_id:
+                import uuid
+                conversation_id = str(uuid.uuid4())
+            
+            # Create new conversation
+            conv = DSLConversation(task, self)
+            self.active_conversations[conversation_id] = conv
+            
+            return jsonify({
+                "conversation_id": conversation_id,
+                "task": task,
+                "initial_dsl": conv.dsl
+            })
+        
+        @self.app.route('/llm/conversation/turn', methods=['POST'])
+        def conversation_turn():
+            """Process a conversation turn with DSL adaptation"""
+            data = request.json
+            conversation_id = data.get('conversation_id')
+            user_input = data.get('input', '')
+            
+            if not conversation_id or conversation_id not in self.active_conversations:
+                return jsonify({"error": "Invalid conversation_id"}), 400
+            
+            conv = self.active_conversations[conversation_id]
+            
+            # Process turn (simulated LLM)
+            response, behavior = conv.turn(user_input, None)
+            
+            return jsonify({
+                "response": response,
+                "turn": len(conv.turns),
+                "current_dsl": conv.dsl,
+                "behavior": {
+                    "actual_u": behavior.actual_u,
+                    "compliance": behavior.followed_recommendation
+                }
+            })
+        
+        @self.app.route('/llm/conversation/end', methods=['POST'])
+        def end_conversation():
+            """End conversation and record trajectory"""
+            data = request.json
+            conversation_id = data.get('conversation_id')
+            
+            if not conversation_id or conversation_id not in self.active_conversations:
+                return jsonify({"error": "Invalid conversation_id"}), 400
+            
+            conv = self.active_conversations[conversation_id]
+            trajectory = conv.get_trajectory()
+            
+            # Record to donkey
+            self.record_trajectory(
+                trajectory['task'],
+                trajectory['dsl'],
+                trajectory['success'] > 0.7,
+                len(conv.turns) * 1000
+            )
+            
+            # Clean up
+            del self.active_conversations[conversation_id]
+            
+            return jsonify({
+                "trajectory": trajectory,
+                "recorded": True
+            })
+        
+        @self.app.route('/llm/calibrate', methods=['GET'])
+        def get_calibration():
+            """Get current DSL effect calibration data"""
+            # In production, this would return actual calibration data
+            return jsonify({
+                "calibration": {
+                    "u_effects": {
+                        "0.1": 0.15,
+                        "0.5": 0.6,
+                        "1.0": 1.1,
+                        "2.0": 1.8,
+                        "5.0": 3.5
+                    },
+                    "test_compliance": 0.75,
+                    "memory_compliance": 0.82
+                }
+            })
+        
+    def _simulate_llm_response(self, prompt: str, u_value: float) -> str:
+        """Simulate LLM response based on DSL parameters"""
+        if u_value > 2.0:
+            return f"""Based on the exploration directive, I'll consider multiple approaches:
+
+Approach 1: We could use an innovative algorithm that...
+Approach 2: An experimental technique involves...
+Approach 3: A creative solution would be to...
+
+Given the high exploration parameter (u={u_value:.1f}), I recommend trying the most novel approach first."""
+        elif u_value < 0.5:
+            return f"""Following the focus directive, I'll use the standard approach:
+
+The proven solution is to implement a traditional pattern that has been tested extensively. 
+This conventional method ensures reliability and maintainability.
+
+As specified by the low exploration parameter (u={u_value:.1f}), I'm avoiding experimental solutions."""
+        else:
+            return f"""I'll provide a balanced solution:
+
+The standard approach works well here, with some optimizations for better performance.
+This combines reliability with modest improvements.
+
+The moderate exploration parameter (u={u_value:.1f}) allows for some innovation within proven patterns."""
 
 def main():
     # Create donkey instance
