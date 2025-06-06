@@ -1,0 +1,174 @@
+{
+  "timestamp": "2025-06-06T17:59:31.421843",
+  "total_cost": 0.010801999999999999,
+  "rounds": 3,
+  "final_exploration_rate": 0.10289999999999999,
+  "results_by_round": [
+    [
+      {
+        "task": "Write comprehensive tests for a sorting ...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.1,
+        "strategy": "exploit",
+        "optimal_distance": 0.3416666666666666
+      },
+      {
+        "task": "Explore 5 different ways to implement a ...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.2,
+        "strategy": "exploit",
+        "optimal_distance": 0.43333333333333335
+      },
+      {
+        "task": "Fix this production bug urgently: null p...",
+        "dsl": {
+          "u": 2.0,
+          "test_prob": 0.9
+        },
+        "quality": 0.7,
+        "strategy": "explore",
+        "optimal_distance": 0.35
+      },
+      {
+        "task": "Brainstorm creative solutions for real-t...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.6,
+        "strategy": "exploit",
+        "optimal_distance": 0.4
+      },
+      {
+        "task": "Implement a robust error handling system...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.6,
+        "strategy": "exploit",
+        "optimal_distance": 0.2833333333333333
+      }
+    ],
+    [
+      {
+        "task": "Write comprehensive tests for a sorting ...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.1,
+        "strategy": "exploit",
+        "optimal_distance": 0.3416666666666666
+      },
+      {
+        "task": "Explore 5 different ways to implement a ...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.1,
+        "strategy": "exploit",
+        "optimal_distance": 0.43333333333333335
+      },
+      {
+        "task": "Fix this production bug urgently: null p...",
+        "dsl": {
+          "u": 2.0,
+          "test_prob": 0.9
+        },
+        "quality": 0.4,
+        "strategy": "exploit",
+        "optimal_distance": 0.35
+      },
+      {
+        "task": "Brainstorm creative solutions for real-t...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.6,
+        "strategy": "exploit",
+        "optimal_distance": 0.4
+      },
+      {
+        "task": "Implement a robust error handling system...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.7999999999999999,
+        "strategy": "exploit",
+        "optimal_distance": 0.2833333333333333
+      }
+    ],
+    [
+      {
+        "task": "Write comprehensive tests for a sorting ...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.1,
+        "strategy": "exploit",
+        "optimal_distance": 0.3416666666666666
+      },
+      {
+        "task": "Explore 5 different ways to implement a ...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.2,
+        "strategy": "exploit",
+        "optimal_distance": 0.43333333333333335
+      },
+      {
+        "task": "Fix this production bug urgently: null p...",
+        "dsl": {
+          "u": 2.0,
+          "test_prob": 0.9
+        },
+        "quality": 0.4,
+        "strategy": "exploit",
+        "optimal_distance": 0.35
+      },
+      {
+        "task": "Brainstorm creative solutions for real-t...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.6,
+        "strategy": "exploit",
+        "optimal_distance": 0.4
+      },
+      {
+        "task": "Implement a robust error handling system...",
+        "dsl": {
+          "u": 1.0,
+          "test_prob": 0.5
+        },
+        "quality": 0.5,
+        "strategy": "exploit",
+        "optimal_distance": 0.2833333333333333
+      }
+    ]
+  ],
+  "dsl_performance": {
+    "u1.0_t0.5": {
+      "trials": 12,
+      "total_quality": 4.5
+    },
+    "u2.0_t0.9": {
+      "trials": 3,
+      "total_quality": 1.5
+    }
+  }
+}
